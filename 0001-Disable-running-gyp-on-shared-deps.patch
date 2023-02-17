@@ -1,16 +1,16 @@
-From f850686d1442e6c4f409f8e24ef461e29710277b Mon Sep 17 00:00:00 2001
+From 0164079f84aae90d0f61d84b90dd6e05bca8890c Mon Sep 17 00:00:00 2001
 From: Zuzana Svetlikova <zsvetlik@redhat.com>
 Date: Fri, 17 Apr 2020 12:59:44 +0200
 Subject: [PATCH] Disable running gyp on shared deps
 
 Signed-off-by: rpm-build <rpm-build>
 ---
- Makefile |  2 +-
+ Makefile |  4 ++--
  node.gyp | 17 -----------------
- 2 files changed, 1 insertion(+), 18 deletions(-)
+ 2 files changed, 2 insertions(+), 19 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 05fdc1509844ad616e1ae1490bb0f244627fcda9..46816fe1bc7108bd4f0abd6277b2a4f9b4283f95 100644
+index 94013466239e9c43ddce5cebc7a8d0a4dc56db4f..8577570c95d20dcf8d3dfe5d9fe82c1f67b2d70a 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -169,7 +169,7 @@ with-code-cache test-code-cache:
@@ -19,14 +19,23 @@ index 05fdc1509844ad616e1ae1490bb0f244627fcda9..46816fe1bc7108bd4f0abd6277b2a4f9
  out/Makefile: config.gypi common.gypi node.gyp \
 -	deps/uv/uv.gyp deps/llhttp/llhttp.gyp deps/zlib/zlib.gyp \
 +	deps/llhttp/llhttp.gyp \
+ 	deps/simdutf/simdutf.gyp \
  	tools/v8_gypfiles/toolchain.gypi tools/v8_gypfiles/features.gypi \
  	tools/v8_gypfiles/inspector.gypi tools/v8_gypfiles/v8.gyp
- 	$(PYTHON) tools/gyp_node.py -f make
+@@ -1550,7 +1550,7 @@ CONFLICT_RE=^>>>>>>> [[:xdigit:]]+|^<<<<<<< [[:alpha:]]+
+ 
+ # Related CI job: node-test-linter
+ lint-ci: lint-js-ci lint-cpp lint-py lint-md lint-addon-docs lint-yaml-build lint-yaml
+-	@if ! ( grep -IEqrs "$(CONFLICT_RE)" --exclude="error-message.js" --exclude="merge-conflict.json" benchmark deps doc lib src test tools ) \
++	@if ! ( grep -IEqrs "$(CONFLICT_RE)" --exclude="error-message.js" benchmark deps doc lib src test tools ) \
+ 		&& ! ( $(FIND) . -maxdepth 1 -type f | xargs grep -IEqs "$(CONFLICT_RE)" ); then \
+ 		exit 0 ; \
+ 	else \
 diff --git a/node.gyp b/node.gyp
-index 1885a8d1ecb983fe8fd1ce3cc8cd53ee48e241d2..917eeb73d20791625e71b3e921b2fa9a68fd6133 100644
+index cec24aed034362530cfbe833f4f52098f3fbaf2e..13af00f40d006fa75bfc5f656b505d29abf5038e 100644
 --- a/node.gyp
 +++ b/node.gyp
-@@ -428,23 +428,6 @@
+@@ -429,23 +429,6 @@
                ],
              },
            ],
@@ -51,5 +60,5 @@ index 1885a8d1ecb983fe8fd1ce3cc8cd53ee48e241d2..917eeb73d20791625e71b3e921b2fa9a
        ],
      }, # node_core_target_name
 -- 
-2.39.0
+2.39.1
 

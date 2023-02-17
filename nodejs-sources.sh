@@ -159,6 +159,7 @@ rm -f ${LEXER_VERSION}.tar.gz
 LEXER_WASI_MAJOR=$(grep -oP '(?<=^\W../wasi-sdk-)\d+\.\d+' cjs-module-lexer-${LEXER_VERSION}/Makefile | cut -d'.'  -f1)
 LEXER_WASI_MINOR=$(grep -oP '(?<=^\W../wasi-sdk-)\d+\.\d+' cjs-module-lexer-${LEXER_VERSION}/Makefile | cut -d'.'  -f2)
 wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${LEXER_WASI_MAJOR}/wasi-sdk-${LEXER_WASI_MAJOR}.${LEXER_WASI_MINOR}-linux.tar.gz
+rm -rf cjs-module-lexer-${LEXER_VERSION}/
 
 # Download the undici sources
 UNDICI_VERSION=$(jq -r '.version' node-v${version}/deps/undici/src/package.json)
@@ -172,6 +173,7 @@ rm -f v${UNDICI_VERSION}.tar.gz
 UNDICI_WASI_MAJOR=$(grep -oP '(?<=WASI_SDK_VERSION_MAJOR=).*' undici-${UNDICI_VERSION}/build/Dockerfile)
 UNDICI_WASI_MINOR=$(grep -oP '(?<=WASI_SDK_VERSION_MINOR=).*' undici-${UNDICI_VERSION}/build/Dockerfile)
 wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${UNDICI_WASI_MAJOR}/wasi-sdk-${UNDICI_WASI_MAJOR}.${UNDICI_WASI_MINOR}-linux.tar.gz
+rm -rf undici-${UNDICI_VERSION}/
 
 ICU_MAJOR=$(jq -r '.[0].url' node-v${version}/tools/icu/current_ver.dep | sed --expression='s/.*release-\([[:digit:]]\+\)-\([[:digit:]]\+\).*/\1/g')
 ICU_MINOR=$(jq -r '.[0].url' node-v${version}/tools/icu/current_ver.dep | sed --expression='s/.*release-\([[:digit:]]\+\)-\([[:digit:]]\+\).*/\2/g')
