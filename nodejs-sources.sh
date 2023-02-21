@@ -127,6 +127,16 @@ NODE_MAJOR=$(echo $version | cut -d. -f1)
 NODE_MINOR=$(echo $version | cut -d. -f2)
 NODE_PATCH=$(echo $version | cut -d. -f3)
 
+# Treat odd-numbered major releases as pre-releases for the
+# next LTS release.
+if [[ $((NODE_MAJOR % 2)) -eq 0 ]];
+  then NODE_PKG_MAJOR=${NODE_MAJOR};
+  else NODE_PKG_MAJOR=$((NODE_MAJOR + 1));
+fi
+
+FEDORA_DEFAULT_RELEASE_LOW=$((NODE_PKG_MAJOR + 19))
+FEDORA_DEFAULT_RELEASE_HIGH=$((NODE_PKG_MAJOR + 20))
+
 rm -rf node-v${version}.tar.gz \
        node-v${version}-stripped.tar.gz \
        node-v${version}/ \
@@ -283,34 +293,43 @@ echo "========================="
 echo "${UNDICI_VERSION}"
 echo "WASI-SDK: ${UNDICI_WASI_MAJOR}.${UNDICI_WASI_MINOR}"
 echo
+echo "ada"
+echo "========================="
+ADA_VERSION=$(grep -oP '(?<=#define ADA_VERSION ).*\"' node-v${version}/deps/ada/ada.h |sed -e 's/^"//' -e 's/"$//')
+echo "${ADA_VERSION}"
+echo
 echo "Applying versions to spec template"
 
-sed -e "s/@NODE_MAJOR@/${NODE_MAJOR}/g" \
+sed -e "s/@NODE_PKG_MAJOR@/${NODE_PKG_MAJOR}/g" \
+    -e "s/@NODE_MAJOR@/${NODE_MAJOR}/g" \
     -e "s/@NODE_MINOR@/${NODE_MINOR}/g" \
     -e "s/@NODE_PATCH@/${NODE_PATCH}/g" \
+    -e "s/@FEDORA_DEFAULT_RELEASE_LOW@/${FEDORA_DEFAULT_RELEASE_LOW}/g" \
+    -e "s/@FEDORA_DEFAULT_RELEASE_HIGH@/${FEDORA_DEFAULT_RELEASE_HIGH}/g" \
     -e "s/@NODE_SOVERSION@/${NODE_SOVERSION}/g" \
     -e "s/@V8_MAJOR@/${V8_MAJOR}/g" \
     -e "s/@V8_MINOR@/${V8_MINOR}/g" \
     -e "s/@V8_BUILD@/${V8_BUILD}/g" \
     -e "s/@V8_PATCH@/${V8_PATCH}/g" \
-	-e "s/@C_ARES_VERSION@/${C_ARES_VERSION}/g" \
-	-e "s/@LLHTTP_VERSION@/${LLHTTP_MAJOR}.${LLHTTP_MINOR}.${LLHTTP_PATCH}/g" \
-	-e "s/@LIBUV_VERSION@/${UV_MAJOR}.${UV_MINOR}.${UV_PATCH}/g" \
-	-e "s/@NGHTTP2_VERSION@/${NGHTTP2_VERSION}/g" \
-	-e "s/@ICU_MAJOR@/${ICU_MAJOR}/g" \
-	-e "s/@ICU_MINOR@/${ICU_MINOR}/g" \
-	-e "s/@PUNYCODE_VERSION@/${PUNYCODE_VERSION}/g" \
-	-e "s/@UVWASI_VERSION@/${UVWASI_VERSION}/g" \
-	-e "s/@NPM_VERSION@/${NPM_VERSION}/g" \
-	-e "s/@ZLIB_VERSION@/${ZLIB_VERSION}/g" \
-	-e "s/@LEXER_VERSION@/${LEXER_VERSION}/g" \
-	-e "s/@LEXER_WASI_MAJOR@/${LEXER_WASI_MAJOR}/g" \
-	-e "s/@LEXER_WASI_MINOR@/${LEXER_WASI_MINOR}/g" \
-	-e "s/@UNDICI_VERSION@/${UNDICI_VERSION}/g" \
-	-e "s/@UNDICI_WASI_MAJOR@/${UNDICI_WASI_MAJOR}/g" \
-	-e "s/@UNDICI_WASI_MINOR@/${UNDICI_WASI_MINOR}/g" \
+    -e "s/@C_ARES_VERSION@/${C_ARES_VERSION}/g" \
+    -e "s/@LLHTTP_VERSION@/${LLHTTP_MAJOR}.${LLHTTP_MINOR}.${LLHTTP_PATCH}/g" \
+    -e "s/@LIBUV_VERSION@/${UV_MAJOR}.${UV_MINOR}.${UV_PATCH}/g" \
+    -e "s/@NGHTTP2_VERSION@/${NGHTTP2_VERSION}/g" \
+    -e "s/@ICU_MAJOR@/${ICU_MAJOR}/g" \
+    -e "s/@ICU_MINOR@/${ICU_MINOR}/g" \
+    -e "s/@PUNYCODE_VERSION@/${PUNYCODE_VERSION}/g" \
+    -e "s/@UVWASI_VERSION@/${UVWASI_VERSION}/g" \
+    -e "s/@NPM_VERSION@/${NPM_VERSION}/g" \
+    -e "s/@ZLIB_VERSION@/${ZLIB_VERSION}/g" \
+    -e "s/@LEXER_VERSION@/${LEXER_VERSION}/g" \
+    -e "s/@LEXER_WASI_MAJOR@/${LEXER_WASI_MAJOR}/g" \
+    -e "s/@LEXER_WASI_MINOR@/${LEXER_WASI_MINOR}/g" \
+    -e "s/@UNDICI_VERSION@/${UNDICI_VERSION}/g" \
+    -e "s/@UNDICI_WASI_MAJOR@/${UNDICI_WASI_MAJOR}/g" \
+    -e "s/@UNDICI_WASI_MINOR@/${UNDICI_WASI_MINOR}/g" \
+    -e "s/@ADA_VERSION@/${ADA_VERSION}/g" \
     ${SCRIPT_DIR}/packaging/nodejs.spec.in \
-    > ${SCRIPT_DIR}/nodejs${NODE_MAJOR}.spec
+    > ${SCRIPT_DIR}/nodejs${NODE_PKG_MAJOR}.spec
 
 rm -rf node-v${version}
 # ] <-- needed because of Argbash
