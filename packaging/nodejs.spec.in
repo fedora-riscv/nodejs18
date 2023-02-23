@@ -161,9 +161,6 @@ Source102: wasi-sdk-@LEXER_WASI_MAJOR@.@LEXER_WASI_MINOR@-linux.tar.gz
 Source111: undici-@UNDICI_VERSION@-stripped.tar.gz
 Source112: wasi-sdk-@UNDICI_WASI_MAJOR@.@UNDICI_WASI_MINOR@-linux.tar.gz
 
-# Disable running gyp on bundled deps we don't use
-Patch1: 0001-Disable-running-gyp-on-shared-deps.patch
-
 %if 0%{?nodejs_default}
 %global pkgname nodejs
 %package -n %{pkgname}
