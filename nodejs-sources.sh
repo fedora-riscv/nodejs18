@@ -137,6 +137,10 @@ fi
 FEDORA_DEFAULT_RELEASE_LOW=$((NODE_PKG_MAJOR + 19))
 FEDORA_DEFAULT_RELEASE_HIGH=$((NODE_PKG_MAJOR + 20))
 
+if [[ $((NODE_PKG_MAJOR)) -eq 20 ]]
+  then RHEL_DEFAULT_RELEASE=" || 0%{?rhel} == 10"
+fi
+
 rm -rf node-v${version}.tar.gz \
        node-v${version}-stripped.tar.gz \
        node-v${version}/ \
@@ -190,22 +194,8 @@ ICU_MINOR=$(jq -r '.[0].url' node-v${version}/tools/icu/current_ver.dep | sed --
 
 # Download the ICU binary data files
 rm -Rf icu4c-${ICU_MAJOR}_${ICU_MINOR}-data-bin-*.zip
-wget $(grep Source3 packaging/nodejs.spec.in | sed --expression="s/.*http/http/g" --expression="s/\(\%{icu_major}\)/${ICU_MAJOR}/g" --expression="s/\(\%{icu_minor}\)/${ICU_MINOR}/g")
-wget $(grep Source4 packaging/nodejs.spec.in | sed --expression="s/.*http/http/g" --expression="s/\(\%{icu_major}\)/${ICU_MAJOR}/g" --expression="s/\(\%{icu_minor}\)/${ICU_MINOR}/g")
-
-if [ $_arg_push = 'on' ]; then
-  push_flag=''
-else
-  push_flag='--offline'
-fi
-
-fedpkg new-sources ${push_flag} \
-                   node-v${version}-stripped.tar.gz \
-                   icu4c-${ICU_MAJOR}_${ICU_MINOR}-data-bin-*.zip \
-                   cjs-module-lexer-${LEXER_VERSION}-stripped.tar.gz \
-                   wasi-sdk-${LEXER_WASI_MAJOR}.${LEXER_WASI_MINOR}-linux.tar.gz \
-                   undici-${UNDICI_VERSION}-stripped.tar.gz \
-                   wasi-sdk-${UNDICI_WASI_MAJOR}.${UNDICI_WASI_MINOR}-linux.tar.gz
+wget $(grep Source3 packaging/nodejs.spec.j2 | sed --expression="s/.*http/http/g" --expression="s/\(\%{icu_major}\)/${ICU_MAJOR}/g" --expression="s/\(\%{icu_minor}\)/${ICU_MINOR}/g")
+wget $(grep Source4 packaging/nodejs.spec.j2 | sed --expression="s/.*http/http/g" --expression="s/\(\%{icu_major}\)/${ICU_MAJOR}/g" --expression="s/\(\%{icu_minor}\)/${ICU_MINOR}/g")
 
 rm -f node-v${version}.tar.gz
 
@@ -242,14 +232,16 @@ echo "========================="
 LLHTTP_MAJOR=$(grep -oP '(?<=#define LLHTTP_VERSION_MAJOR )\d+' node-v${version}/deps/llhttp/include/llhttp.h)
 LLHTTP_MINOR=$(grep -oP '(?<=#define LLHTTP_VERSION_MINOR )\d+' node-v${version}/deps/llhttp/include/llhttp.h)
 LLHTTP_PATCH=$(grep -oP '(?<=#define LLHTTP_VERSION_PATCH )\d+' node-v${version}/deps/llhttp/include/llhttp.h)
-echo "${LLHTTP_MAJOR}.${LLHTTP_MINOR}.${LLHTTP_PATCH}"
+LLHTTP_VERSION="${LLHTTP_MAJOR}.${LLHTTP_MINOR}.${LLHTTP_PATCH}"
+echo $LLHTTP_VERSION
 echo
 echo "libuv"
 echo "========================="
 UV_MAJOR=$(grep -oP '(?<=#define UV_VERSION_MAJOR )\d+' node-v${version}/deps/uv/include/uv/version.h)
 UV_MINOR=$(grep -oP '(?<=#define UV_VERSION_MINOR )\d+' node-v${version}/deps/uv/include/uv/version.h)
 UV_PATCH=$(grep -oP '(?<=#define UV_VERSION_PATCH )\d+' node-v${version}/deps/uv/include/uv/version.h)
-echo ${UV_MAJOR}.${UV_MINOR}.${UV_PATCH}
+LIBUV_VERSION="${UV_MAJOR}.${UV_MINOR}.${UV_PATCH}"
+echo $UV_VERSION
 echo
 echo "nghttp2"
 echo "========================="
@@ -295,41 +287,62 @@ echo "WASI-SDK: ${UNDICI_WASI_MAJOR}.${UNDICI_WASI_MINOR}"
 echo
 echo "ada"
 echo "========================="
-ADA_VERSION=$(grep -oP '(?<=#define ADA_VERSION ).*\"' node-v${version}/deps/ada/ada.h |sed -e 's/^"//' -e 's/"$//')
+ADA_VERSION=$(grep -osP '(?<=#define ADA_VERSION ).*\"' node-v${version}/deps/ada/ada.h |sed -e 's/^"//' -e 's/"$//')
+ADA_VERSION=${ADA_VERSION:-0}
 echo "${ADA_VERSION}"
 echo
 echo "Applying versions to spec template"
 
-sed -e "s/@NODE_PKG_MAJOR@/${NODE_PKG_MAJOR}/g" \
-    -e "s/@NODE_MAJOR@/${NODE_MAJOR}/g" \
-    -e "s/@NODE_MINOR@/${NODE_MINOR}/g" \
-    -e "s/@NODE_PATCH@/${NODE_PATCH}/g" \
-    -e "s/@FEDORA_DEFAULT_RELEASE_LOW@/${FEDORA_DEFAULT_RELEASE_LOW}/g" \
-    -e "s/@FEDORA_DEFAULT_RELEASE_HIGH@/${FEDORA_DEFAULT_RELEASE_HIGH}/g" \
-    -e "s/@NODE_SOVERSION@/${NODE_SOVERSION}/g" \
-    -e "s/@V8_MAJOR@/${V8_MAJOR}/g" \
-    -e "s/@V8_MINOR@/${V8_MINOR}/g" \
-    -e "s/@V8_BUILD@/${V8_BUILD}/g" \
-    -e "s/@V8_PATCH@/${V8_PATCH}/g" \
-    -e "s/@C_ARES_VERSION@/${C_ARES_VERSION}/g" \
-    -e "s/@LLHTTP_VERSION@/${LLHTTP_MAJOR}.${LLHTTP_MINOR}.${LLHTTP_PATCH}/g" \
-    -e "s/@LIBUV_VERSION@/${UV_MAJOR}.${UV_MINOR}.${UV_PATCH}/g" \
-    -e "s/@NGHTTP2_VERSION@/${NGHTTP2_VERSION}/g" \
-    -e "s/@ICU_MAJOR@/${ICU_MAJOR}/g" \
-    -e "s/@ICU_MINOR@/${ICU_MINOR}/g" \
-    -e "s/@PUNYCODE_VERSION@/${PUNYCODE_VERSION}/g" \
-    -e "s/@UVWASI_VERSION@/${UVWASI_VERSION}/g" \
-    -e "s/@NPM_VERSION@/${NPM_VERSION}/g" \
-    -e "s/@ZLIB_VERSION@/${ZLIB_VERSION}/g" \
-    -e "s/@LEXER_VERSION@/${LEXER_VERSION}/g" \
-    -e "s/@LEXER_WASI_MAJOR@/${LEXER_WASI_MAJOR}/g" \
-    -e "s/@LEXER_WASI_MINOR@/${LEXER_WASI_MINOR}/g" \
-    -e "s/@UNDICI_VERSION@/${UNDICI_VERSION}/g" \
-    -e "s/@UNDICI_WASI_MAJOR@/${UNDICI_WASI_MAJOR}/g" \
-    -e "s/@UNDICI_WASI_MINOR@/${UNDICI_WASI_MINOR}/g" \
-    -e "s/@ADA_VERSION@/${ADA_VERSION}/g" \
-    ${SCRIPT_DIR}/packaging/nodejs.spec.in \
+# Get the list of patches we need to add to the specfile
+readarray -t patchlist < <(git ls-files |grep '^[0-9]\{4\}-.*\.patch')
+json_patchlist=$(jq --compact-output --null-input '$ARGS.positional' --args -- "${patchlist[@]}")
+
+IFS='' read -r -d '' template_json <<EOF
+{
+    "NODE_PKG_MAJOR": $NODE_PKG_MAJOR,
+    "NODE_MAJOR": $NODE_MAJOR,
+    "NODE_MINOR": $NODE_MINOR,
+    "NODE_PATCH": $NODE_PATCH,
+    "FEDORA_DEFAULT_RELEASE_LOW": $FEDORA_DEFAULT_RELEASE_LOW,
+    "FEDORA_DEFAULT_RELEASE_HIGH": $FEDORA_DEFAULT_RELEASE_HIGH,
+	"RHEL_DEFAULT_RELEASE": "$RHEL_DEFAULT_RELEASE",
+    "NODE_SOVERSION": $NODE_SOVERSION,
+    "V8_MAJOR": $V8_MAJOR,
+    "V8_MINOR": $V8_MINOR,
+    "V8_BUILD": $V8_BUILD,
+    "V8_PATCH": $V8_PATCH,
+    "C_ARES_VERSION": $C_ARES_VERSION,
+    "LLHTTP_VERSION": $LLHTTP_VERSION,
+    "LIBUV_VERSION": $LIBUV_VERSION,
+    "NGHTTP2_VERSION": $NGHTTP2_VERSION,
+    "ICU_MAJOR": $ICU_MAJOR,
+    "ICU_MINOR": $ICU_MINOR,
+    "PUNYCODE_VERSION": $PUNYCODE_VERSION,
+    "UVWASI_VERSION": $UVWASI_VERSION,
+    "NPM_VERSION": $NPM_VERSION,
+    "ZLIB_VERSION": $ZLIB_VERSION,
+    "LEXER_VERSION": $LEXER_VERSION,
+    "LEXER_WASI_MAJOR": $LEXER_WASI_MAJOR,
+    "LEXER_WASI_MINOR": $LEXER_WASI_MINOR,
+    "UNDICI_VERSION": $UNDICI_VERSION,
+    "UNDICI_WASI_MAJOR": $UNDICI_WASI_MAJOR,
+    "UNDICI_WASI_MINOR": $UNDICI_WASI_MINOR,
+    "ADA_VERSION": $ADA_VERSION,
+	"PATCHES": $json_patchlist
+}
+EOF
+
+echo ${template_json} | jinja2 ${SCRIPT_DIR}/packaging/nodejs.spec.j2 \
     > ${SCRIPT_DIR}/nodejs${NODE_PKG_MAJOR}.spec
+
+if [ $_arg_push = 'on' ]; then
+  fedpkg new-sources node-v${version}-stripped.tar.gz \
+                     icu4c-${ICU_MAJOR}_${ICU_MINOR}-data-bin-*.zip \
+                     cjs-module-lexer-${LEXER_VERSION}-stripped.tar.gz \
+                     wasi-sdk-${LEXER_WASI_MAJOR}.${LEXER_WASI_MINOR}-linux.tar.gz \
+                     undici-${UNDICI_VERSION}-stripped.tar.gz \
+                     wasi-sdk-${UNDICI_WASI_MAJOR}.${UNDICI_WASI_MINOR}-linux.tar.gz
+fi
 
 rm -rf node-v${version}
 # ] <-- needed because of Argbash

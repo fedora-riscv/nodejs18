@@ -1,0 +1,68 @@
+From 07410a91b031a99636830c5bf825d243f1fa9bfd Mon Sep 17 00:00:00 2001
+From: Zuzana Svetlikova <zsvetlik@redhat.com>
+Date: Fri, 17 Apr 2020 12:59:44 +0200
+Subject: [PATCH] Remove unused OpenSSL config
+
+The build process will try to create these config files, even when
+using the system OpenSSL and will thus fail since we strip this path
+from the tarball.
+
+Signed-off-by: Stephen Gallagher <sgallagh@redhat.com>
+---
+ Makefile |  4 ++--
+ node.gyp | 17 -----------------
+ 2 files changed, 2 insertions(+), 19 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 94013466239e9c43ddce5cebc7a8d0a4dc56db4f..8577570c95d20dcf8d3dfe5d9fe82c1f67b2d70a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -169,7 +169,7 @@ with-code-cache test-code-cache:
+ 	$(warning '$@' target is a noop)
+ 
+ out/Makefile: config.gypi common.gypi node.gyp \
+-	deps/uv/uv.gyp deps/llhttp/llhttp.gyp deps/zlib/zlib.gyp \
++	deps/llhttp/llhttp.gyp \
+ 	deps/simdutf/simdutf.gyp \
+ 	tools/v8_gypfiles/toolchain.gypi tools/v8_gypfiles/features.gypi \
+ 	tools/v8_gypfiles/inspector.gypi tools/v8_gypfiles/v8.gyp
+@@ -1550,7 +1550,7 @@ CONFLICT_RE=^>>>>>>> [[:xdigit:]]+|^<<<<<<< [[:alpha:]]+
+ 
+ # Related CI job: node-test-linter
+ lint-ci: lint-js-ci lint-cpp lint-py lint-md lint-addon-docs lint-yaml-build lint-yaml
+-	@if ! ( grep -IEqrs "$(CONFLICT_RE)" --exclude="error-message.js" --exclude="merge-conflict.json" benchmark deps doc lib src test tools ) \
++	@if ! ( grep -IEqrs "$(CONFLICT_RE)" --exclude="error-message.js" benchmark deps doc lib src test tools ) \
+ 		&& ! ( $(FIND) . -maxdepth 1 -type f | xargs grep -IEqs "$(CONFLICT_RE)" ); then \
+ 		exit 0 ; \
+ 	else \
+diff --git a/node.gyp b/node.gyp
+index cec24aed034362530cfbe833f4f52098f3fbaf2e..13af00f40d006fa75bfc5f656b505d29abf5038e 100644
+--- a/node.gyp
++++ b/node.gyp
+@@ -429,23 +429,6 @@
+               ],
+             },
+           ],
+-         }, {
+-           'variables': {
+-              'opensslconfig_internal': '<(obj_dir)/deps/openssl/openssl.cnf',
+-              'opensslconfig': './deps/openssl/nodejs-openssl.cnf',
+-           },
+-           'actions': [
+-             {
+-               'action_name': 'reset_openssl_cnf',
+-               'inputs': [ '<(opensslconfig)', ],
+-               'outputs': [ '<(opensslconfig_internal)', ],
+-               'action': [
+-                 '<(python)', 'tools/copyfile.py',
+-                 '<(opensslconfig)',
+-                 '<(opensslconfig_internal)',
+-               ],
+-             },
+-           ],
+          }],
+       ],
+     }, # node_core_target_name
+-- 
+2.39.2
+
