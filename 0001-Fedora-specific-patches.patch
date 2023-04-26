@@ -1,0 +1,47 @@
+From e1e2ba106dd990e09a50fbb29d632acec569c1b1 Mon Sep 17 00:00:00 2001
+From: Stephen Gallagher <sgallagh@redhat.com>
+Date: Fri, 17 Apr 2020 12:59:44 +0200
+Subject: [PATCH] Fedora-specific patches
+
+1) Remove unused OpenSSL config
+
+The build process will try to create these config files, even when
+using the system OpenSSL and will thus fail since we strip this path
+from the tarball.
+
+Signed-off-by: Stephen Gallagher <sgallagh@redhat.com>
+---
+ node.gyp | 17 -----------------
+ 1 file changed, 17 deletions(-)
+
+diff --git a/node.gyp b/node.gyp
+index cf52281bb4479ba20fbe852518edadc2185f0dae..c33b57ba31aa898ca22677bf655e6689a4758ce6 100644
+--- a/node.gyp
++++ b/node.gyp
+@@ -430,23 +430,6 @@
+               ],
+             },
+           ],
+-         }, {
+-           'variables': {
+-              'opensslconfig_internal': '<(obj_dir)/deps/openssl/openssl.cnf',
+-              'opensslconfig': './deps/openssl/nodejs-openssl.cnf',
+-           },
+-           'actions': [
+-             {
+-               'action_name': 'reset_openssl_cnf',
+-               'inputs': [ '<(opensslconfig)', ],
+-               'outputs': [ '<(opensslconfig_internal)', ],
+-               'action': [
+-                 '<(python)', 'tools/copyfile.py',
+-                 '<(opensslconfig)',
+-                 '<(opensslconfig_internal)',
+-               ],
+-             },
+-           ],
+          }],
+       ],
+     }, # node_core_target_name
+-- 
+2.40.0
+
