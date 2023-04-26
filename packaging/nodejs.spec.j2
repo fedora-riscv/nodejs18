@@ -659,7 +659,7 @@ for i in 1 5 7; do
   mkdir -p %{buildroot}%{_mandir}/man${i}
   for manpage in %{buildroot}%{nodejs_private_sitelib}/npm/man/man$i/*; do
     basename=$(basename ${manpage})
-    ln -srf %{buildroot}%{nodejs_private_sitelib}/npm/man/man${i}/${manpage} \
+    ln -srf %{buildroot}%{nodejs_private_sitelib}/npm/man/man${i}/${basename} \
             %{buildroot}%{_mandir}/man${i}/${basename}
   done
 done
