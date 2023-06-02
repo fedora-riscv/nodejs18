@@ -15,7 +15,7 @@
 # This is used by both the nodejs package and the npm subpackage that
 # has a separate version - the name is special so that rpmdev-bumpspec
 # will bump this rather than adding .1 to the end.
-%global baserelease %autorelease
+%global baserelease %autorelease -e rv64
 
 %{?!_pkgdocdir:%global _pkgdocdir %{_docdir}/%{name}-%{version}}
 
@@ -493,6 +493,10 @@ pfiles=( $(grep -rl python) )
 # reference to the literal pool.  This is most likely a GCC issue.
 %ifarch armv7hl
 %define _lto_cflags %{nil}
+%endif
+
+%ifarch riscv64
+%global optflags %(echo %{optflags} -fno-strict-aliasing)
 %endif
 
 # Decrease debuginfo verbosity to reduce memory consumption during final
